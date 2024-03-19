@@ -13,6 +13,7 @@ def app():
     import os
     import streamlit as st
     api_key = st.text_input("Enter your API key",type = "password")
+    client = OpenAI(api_key = api_key)
     if os.path.exists("session_folder"):
         shutil.rmtree("session_folder")
         os.mkdir("session_folder")
