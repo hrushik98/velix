@@ -130,56 +130,19 @@ def app():
                 video_clip.write_videofile(output_path, codec='libx264', audio_codec='aac')
                 for img_file in image_files:
                     os.remove(img_file)
-                
-
-            from moviepy.editor import VideoFileClip, concatenate_videoclips
-            import os
-
-            # Path to the folder containing the .mp4 files
-            folder_path = "/home/phani/Desktop/auto_ppt/session_folder"
-
-            # Get a list of all .mp4 files in the folder
-            mp4_files = [file for file in os.listdir(folder_path) if file.endswith(".mp4")]
-
-            # List to hold VideoFileClip objects for each .mp4 file
-            video_clips = []
-
-            # Iterate over each .mp4 file
-            for mp4_file in mp4_files:
-                # Construct the full path to the file
-                file_path = os.path.join(folder_path, mp4_file)
-                # Load the .mp4 file as a VideoFileClip object
-                video_clip = VideoFileClip(file_path)
-                # Append the VideoFileClip object to the list
-                video_clips.append(video_clip)
-
-            # Concatenate all VideoFileClip objects into a single video
-            final_clip = concatenate_videoclips(video_clips, method="compose")
-
-            # Write the final concatenated video to a file named 'final.mp4'
-            final_clip.write_videofile(os.path.join(folder_path, "final.mp4"))
-
-            # Close all the VideoFileClip objects
-            final_clip.close()
-            for clip in video_clips:
-                clip.close()
-
-            print("Concatenation complete. final.mp4 saved.")
+            
 
             import streamlit as st
 
         
             st.title("Final Video Player")
 
-            # Path to the final.mp4 file
-            video_path = "session_folder/final.mp4"
-
-            # Read the video file as bytes
-            with open(video_path, "rb") as f:
-                video_bytes = f.read()
-
-            # Display the video
-            st.video(video_bytes, format="video/mp4")
+            for file in os.listdir("session_folder"):
+                if file.endswith(".mp4"):
+                    video_path = f"session_folder/{file}"
+                    with open(video_path, "rb") as f:
+                        video_bytes = f.read()
+                    st.video(video_bytes, format="video/mp4")
 
     
     
