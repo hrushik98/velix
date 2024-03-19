@@ -110,10 +110,13 @@ def app():
                 content = slide.placeholders[1]
                 content.text = short_description
                 prs.save("session_folder/presentation.pptx")
+
                 presentation_path = "session_folder/presentation.pptx"
-                os.system(f'libreoffice --headless --convert-to pdf {presentation_path}')
-                pdf_file = presentation_path.replace('.pptx', '.pdf')
-                shutil.move("presentation.pdf", "session_folder/presentation.pdf")
+
+                # Convert the presentation to PDF
+                output_directory = 'session_folder'
+                os.system(f'libreoffice --headless --convert-to pdf --outdir {output_directory} {presentation_path}')
+
                 pdf_path = "session_folder/presentation.pdf"
                 audio_path = "session_folder/audio.mp3"
                 images = convert_from_path(pdf_path)
