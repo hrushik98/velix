@@ -1,0 +1,4 @@
+openai
+pptx
+pdf2image
+moviepy
