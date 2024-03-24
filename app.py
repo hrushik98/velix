@@ -1,9 +1,12 @@
+
 import streamlit as st
 from openai import OpenAI
-
+from moviepy.editor import concatenate_videoclips, VideoFileClip
 import os
 import shutil
 from pptx import Presentation
+from pptx.util import Inches, Pt
+from pptx.dml.color import RGBColor
 import os
 from pdf2image import convert_from_path
 from moviepy.editor import ImageSequenceClip, AudioFileClip
@@ -25,8 +28,8 @@ def app():
     lesson name, the book name, the age group of the student. 
     You have to seperate the lessons into different sections and give two descriptions of each section.
     Example: Section <number>: <title>
-    short description: <short description including the important keywords and highlight names with bold italicas>
-    long description: <long description including the important keywords and highlight names with bold italicas>
+    short description: <short description including the important keywords and names>
+    long description: <long description including the important keywords and names>
     <leave a line after each full section>
     Give a minimum of 5 sections and a maximum of 10 sections.
     make sure to use vocabulary and language that is suitable for the age group of the student.
@@ -102,16 +105,47 @@ def app():
                   speed=speed
                 )
                 response.stream_to_file(speech_file_path)
+
+                # Create a new presentation
                 prs = Presentation()
+
+                # Set the background color of the slides
+                slide_background = RGBColor(0xD5, 0xE1, 0xDD)  # Mint cream color
+
+                # Add a slide with a title and content layout
                 slide_layout = prs.slide_layouts[1]
                 slide = prs.slides.add_slide(slide_layout)
+                slide.background.fill.solid()
+                slide.background.fill.fore_color.rgb = slide_background
+
+                # Add a title and content to the slide
                 title = slide.shapes.title
                 title.text = slide_title
+                title.text_frame.paragraphs[0].font.bold = True  # Make the title bold
+                title.text_frame.paragraphs[0].font.color.rgb = RGBColor(0,0,0)  # black color
+                title.text_frame.paragraphs[0].font.size = Pt(28)  # Increase font size
+
                 content = slide.placeholders[1]
                 content.text = short_description
-                prs.save("session_folder/presentation.pptx")
+                content.text_frame.paragraphs[0].font.size = Pt(18)  # Set the font size to 18
+                content.text_frame.paragraphs[0].font.color.rgb = RGBColor(0x2E, 0x64, 0x4E)  # Forest green color
 
+                # Add a gradient fill to the title shape
+                fill = title.fill
+                fill.gradient()
+                fill.gradient_stops[0].color.rgb = RGBColor(0x9F, 0xDA, 0xC9)  # Light green
+                fill.gradient_stops[1].color.rgb = RGBColor(0x2E, 0x64, 0x4E)  # Dark green
+
+                # Add a shadow effect to the content shape
+                content.shadow.inherit = False
+                content.shadow.visible = True
+                content.shadow.blur_radius = Pt(5)
+                content.shadow.offset_x = Inches(0.1)
+                content.shadow.offset_y = Inches(0.1)
+
+                # Save the presentation
                 presentation_path = "session_folder/presentation.pptx"
+                prs.save(presentation_path)
 
                 # Convert the presentation to PDF
                 output_directory = 'session_folder'
@@ -138,15 +172,34 @@ def app():
             import streamlit as st
 
         
-            st.title("Final Video Player")
+            st.title("Individual Clips Player")
 
-            for file in os.listdir("session_folder"):
-                if file.endswith(".mp4"):
-                    video_path = f"session_folder/{file}"
+          
+            for i in range(0,100):
+                try:
+                    video_path = f"session_folder/vid{i}.mp4"
                     with open(video_path, "rb") as f:
                         video_bytes = f.read()
                     st.video(video_bytes, format="video/mp4")
+                except:
+                    break
 
+            video_clips = []
+            for i in range(0, 100):
+                try:
+                    video_path = f"session_folder/vid{i}.mp4"
+                    video_clips.append(VideoFileClip(video_path))
+                except:
+                    break
+
+            final_clip = concatenate_videoclips(video_clips)
+            final_clip.write_videofile("session_folder/final.mp4")
+
+            st.title("Final Video Player")
+            final_video_path = "session_folder/final.mp4"
+            with open(final_video_path, "rb") as f:
+                video_bytes = f.read()
+            st.video(video_bytes, format="video/mp4")
     
     
     st.header('Audio Speed')
@@ -192,7 +245,7 @@ def app():
     ---
     *A Product from [Eklavya.me](https://eklavya.me)*
 
-    [🐦 Twitter](https://twitter.com/)  |  [🔗 LinkedIn](https://linkedin.com)
+    [🔗 LinkedIn](https://www.linkedin.com/company/eklavya-me/)
     """)
 
 
