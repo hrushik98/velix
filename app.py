@@ -69,12 +69,12 @@ def app():
             st.success("Processing")
             #generate script
             response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4-0125-preview",
             messages=[
             {"role": "system", "content": f"{system_message}"},
             {"role": "user", "content": f"{user_message}"},
             ],
-            max_tokens=2000
+            max_tokens=3000
             )
             full_script=response.choices[0].message.content
             print(full_script)
