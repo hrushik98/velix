@@ -25,16 +25,23 @@ def app():
     system_message = """
     You are a teacher with decades of experience in teaching students of all levels and languages. You are 
     talented and help students to learn and understand the subject matter. You will be given a 
-    lesson name, the book name, the age group of the student. 
-    You have to seperate the lessons into different sections and give two descriptions of each section.
-    Example: Section <number>: <title>
-    short description: <short description including the important keywords and names>
-    long description: <long description including the important keywords and names>
-    <leave a line after each full section>
-    Give a minimum of 5 sections and a maximum of 10 sections.
-    make sure to use vocabulary and language that is suitable for the age group of the student.
-    produce a verbatim script with filler words like uh, um, so etc.., so that it sounds natural.
+    lesson name, the book name, the age group of the student. You are tasked with creating a PPT for the students based on the lesson content you receive.
+    Each slide of the ppt must explain a portion of the lesson perfectly. 
+    Follow these guidelines strictly:
+    Short description must be the overview of what you're about to teach and it has to be atleast 5 - 10 lines long.
+    Long description must be the detailed explanation of the topic you're teaching and it has to be atleast 30 - 50 lines long.
+    You will be given a list of sub headings. You must definetly explain these sub headings in your ppt according to the lesson.
+
+    Example: Slide <number>: <title> (this can be the topic you have chosen to teach.)
+    short description: <short overview about the topic you're teaching, including the important keywords. This description has to be 5 - 10 lines"
+    long description: <long description including the important keywords. This description has to be 30 - 50 lines or more. Explain precisely the topic you're explaining"
+    <leave a line after each full section> 
+    <don't leave a line between the title and the short description and long description, please.>
+
+    make sure to use vocabulary and language that is simple and very easy to understand.
+    At the end of last slide, do not give any conclusion or summary. Just end the presentation. Thanks.
     """
+
     st.title("Velix")
     st.markdown("""
                 > High quality narration videos in minutes!
@@ -43,8 +50,8 @@ def app():
     lesson_name = st.text_input('Enter lesson name', value='Example: Quality')
     book_name = st.text_input('Enter book name', value = "Example: Ncert class 7 English")
     age_group = st.text_input("enter age group", value = "Example: 10-12 years")
-    script = st.text_area('Enter script here', height=200)
-    special_instructions = st.text_area('enter special instructions (leave blank if none)', height = 100, value = "Example: Please use vocabulary according to the age group")
+    script = st.text_area('Enter lesson text here', height=300)
+    sub_headings = st.text_area('enter subheadings (leave blank if none)', height = 200)
     speed = st.select_slider('Select Speed', options=[0.75, 1, 1.25, 1.5], value = 1)
     voice = st.selectbox('Select Voice', ("alloy", "echo", "fable", "nova", "onyx", "shimmer"))
     
@@ -53,28 +60,29 @@ def app():
         Lesson Name: {lesson_name}
         Book Name: {book_name}
         Age Group: {age_group}
-        Special isntructions: {special_instructions}
+        Sub headings: {sub_headings}
         script: {script}
         """
-        if len(user_message)/4 > 4000:
+        if len(user_message)/4 > 512000:
             st.error("Please keep the script under 16000 characters")
         else:
             user_message = f"""
             Lesson Name: {lesson_name}
             Book Name: {book_name}
             Age Group: {age_group}
-            Special isntructions: {special_instructions}
-            script: {script}
+            Sub headings: {sub_headings}
+            Lesson content: {script}
             """
             st.success("Processing")
             #generate script
             response = client.chat.completions.create(
-            model = "gpt-3.5-turbo",
+            # model="gpt-4-0125-preview",
+            model = "gpt-4-0125-preview",
             messages=[
             {"role": "system", "content": f"{system_message}"},
             {"role": "user", "content": f"{user_message[:16000]}"},
             ],
-            max_tokens=3000
+            max_tokens=4096
             )
             full_script=response.choices[0].message.content
             print(full_script)
