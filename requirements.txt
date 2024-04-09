@@ -75,4 +75,4 @@ streamlit
 langchain_community
 langchain
 google
-
+pypdf
