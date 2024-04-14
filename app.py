@@ -5,6 +5,7 @@ from pptx.util import Inches, Pt
 from pptx.dml.color import RGBColor
 import streamlit as st
 from openai import OpenAI
+from pptx.dml.color import RGBColor
 from moviepy.editor import concatenate_videoclips, VideoFileClip, ImageSequenceClip, AudioFileClip
 from pdf2image import convert_from_path
 
@@ -57,10 +58,40 @@ def get_text(lesson_name, grade):
         text = f.read()
     return text
 
+def generate_subheadings(lesson_name,grade, api_key):
+    lesson_content = get_text(lesson_name, grade)   
+    book_name = "NCERT"
+    grade = grade
+
+    system_content = f"""
+    You are an AI assistant specialized in preparing teaching material for students of all ages and grades. You will be given an entire lesson and you have to figure out the
+    important subheadings and topics that will be useful for preparing material for the students. The subheadings and subtopics must be only from the lesson content you're provided. Don't make up your own.
+    lesson name: {lesson_name}
+    book name: {book_name}
+    grade: {grade}
+    give them in a number format like this:
+    1. <subheading>
+    1.1 <subheading>
+    2. <subheading>
+    """
+
+    user_content = f""" This is the lesson content: {lesson_content} """
+
+    from openai import OpenAI
+    client = OpenAI(api_key = api_key)
+    response = client.chat.completions.create(
+    model="gpt-4-turbo",
+    messages=[
+    {"role": "system", "content": system_content},
+    {"role": "user", "content": user_content},]
+    )
+    return response.choices[0].message.content
+
+
 def app():
+
     api_key = st.text_input("Enter your API key", type="password")
     client = OpenAI(api_key=api_key)
-
     if os.path.exists("session_folder"):
         shutil.rmtree("session_folder")
         os.mkdir("session_folder")
@@ -78,10 +109,10 @@ def app():
     You will be given a list of sub headings. You must definetly explain these sub headings in your ppt according to the lesson.
 
     Example: Slide <number>: <title> (this can be the topic you have chosen to teach.)
-    short description: <short overview about the topic you're teaching, including the important keywords. This description has to be 10 - 15 lines"
-    long description: <long description including the important keywords. This description has to be 30 - 50 lines or more. Explain very precisely every topic you're explaining. Go into great detail to help the students understand the topic. And please use simple english.>"
-    <leave a line after each full section> 
-    <don't leave a line between the title and the short description and long description, please.>
+    short description: <short overview about the topic you're teaching, including the important keywords. This description has to be 5 - 10 lines"
+    long description: <long description including the important keywords. This description has to be 30 - 50 lines or more. Explain precisely the topic you're explaining"
+    
+    DON'T LEAVE A LINE ANY WHERE IN YOUR RESPONSE.
 
     make sure to use vocabulary and language that is simple and very easy to understand.
     At the end of last slide, do not give any conclusion or summary. Just end the presentation. Thanks.
@@ -93,24 +124,33 @@ def app():
                 """)
 
     class_options = ["Class " + str(i) for i in range(1, 13)]
-    book_name = st.text_input('Enter book name')
+    book_name = st.selectbox('Select book name', ["NCERT"])
     grade = st.selectbox('Select Class', class_options)
     lesson_name = st.text_input('Enter lesson name')
 
     age_group_options = ["6-7 years", "7-8 years", "8-9 years", "9-10 years", "10-11 years", "11-12 years",
                          "12-13 years", "13-14 years", "14-15 years", "15-16 years", "16-17 years", "17-18 years"]
     age_group = st.selectbox('Select Age Group', age_group_options)
-    sub_headings = st.text_area('enter subheadings', height=200)
     speed = st.select_slider('Select Speed', options=[0.75, 1, 1.25, 1.5], value=1)
     voice = st.selectbox('Select Voice', ("alloy", "echo", "fable", "nova", "onyx", "shimmer"))
     count = 0
+    # slide_background_color = st.color_picker("Choose Slide Background Color", value="#D5E1DD")
+    # fill_gradient_color_start = st.color_picker("Choose Fill Gradient Start Color", value="#9FDAC9")
+    # fill_gradient_color_end = st.color_picker("Choose Fill Gradient End Color", value="#2E644E")
+
 
     if st.button("Let's go"):
         script = get_text(lesson_name, grade)
-        st.write(script)
-        lines = [line.strip() for line in sub_headings.split("\n") if line.strip()]
-        sentences = [line.split(". ", 1)[1] for line in lines]
-        chunks = [sentences[i:i + 4] for i in range(0, len(sentences), 4)]
+        sub_headings = generate_subheadings(lesson_name, grade, api_key)
+        print(sub_headings)
+        
+        lines = [line.strip() for line in sub_headings.split("\n") if line.strip()]  # Remove empty lines
+        subheading_string = "\n".join(lines) + "\n"  # Join non-empty lines
+        print(subheading_string)
+
+        sentences = [line.split(". ", 1)[1] if ". " in line else line for line in subheading_string.split("\n")]
+        # chunks = [sentences[i:i + 4] for i in range(0, len(sentences), 4)]
+        chunks = [sentences[i:i + 7] for i in range(0, len(sentences), 7)]
 
         for chunk in chunks:
             subheadings = ""
@@ -144,17 +184,20 @@ def app():
                         {"role": "system", "content": f"{system_message}"},
                         {"role": "user", "content": f"{user_message}"},
                     ],
-                    max_tokens=4096
+                    max_tokens=2000
                 )
 
-                full_script = response.choices[0].message.content
+                full_script = response.choices[0].message.content[:-10]
                 print(full_script)
                 sections = full_script.split("\n\n")
 
                 for k in range(0, len(sections)):
                     slide_title = sections[k].split("\n")[0]
                     short_description = sections[k].split("\n")[1][18:]
-                    long_description = sections[k].split("\n")[2][17:]
+                    try:
+                        long_description = sections[k].split("\n")[2][17:]
+                    except:
+                        long_description = short_description
                     speech_file_path = "session_folder/audio.mp3"
 
                     try:
@@ -180,7 +223,10 @@ def app():
                     )
 
                     response.stream_to_file(speech_file_path)
+                       # Add options for slide background color
+                    
                     prs = Presentation()
+                    
                     slide_background = RGBColor(0xD5, 0xE1, 0xDD)  # Mint cream color
                     slide_layout = prs.slide_layouts[1]
                     slide = prs.slides.add_slide(slide_layout)
@@ -188,7 +234,7 @@ def app():
                     slide.background.fill.fore_color.rgb = slide_background
 
                     title = slide.shapes.title
-                    title.text = slide_title
+                    title.text = str(slide_title)[8:]
                     title.text_frame.paragraphs[0].font.bold = True  # Make the title bold
                     title.text_frame.paragraphs[0].font.color.rgb = RGBColor(0, 0, 0)  # black color
                     title.text_frame.paragraphs[0].font.size = Pt(28)  # Increase font size
@@ -208,6 +254,8 @@ def app():
                     content.shadow.blur_radius = Pt(5)
                     content.shadow.offset_x = Inches(0.1)
                     content.shadow.offset_y = Inches(0.1)
+
+
 
                     presentation_path = "session_folder/presentation.pptx"
                     prs.save(presentation_path)
@@ -236,15 +284,7 @@ def app():
 
                 count += 1
     
-        st.title("Individual Clips Player")
-        for i in range(0, 100):
-            try:
-                video_path = f"session_folder/vid{i}.mp4"
-                with open(video_path, "rb") as f:
-                    video_bytes = f.read()
-                st.video(video_bytes, format="video/mp4")
-            except:
-                break
+        st.success("Combining all the videos into a single file... Please wait.")
 
         video_clips = []
         for i in range(0, 100):
@@ -252,7 +292,7 @@ def app():
                 video_path = f"session_folder/vid{i}.mp4"
                 video_clips.append(VideoFileClip(video_path))
             except:
-                break
+                continue
 
         final_clip = concatenate_videoclips(video_clips)
         final_clip.write_videofile("session_folder/final.mp4")
