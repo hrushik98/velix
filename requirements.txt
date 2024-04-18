@@ -77,3 +77,4 @@ langchain_community
 langchain
 google
 pypdf
+certifi
