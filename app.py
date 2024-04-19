@@ -1,4 +1,6 @@
 import os
+import certifi
+os.environ['SSL_CERT_FILE'] = certifi.where()
 import shutil
 from pptx import Presentation
 from pptx.util import Inches, Pt
@@ -8,6 +10,8 @@ from openai import OpenAI
 from pptx.dml.color import RGBColor
 from moviepy.editor import concatenate_videoclips, VideoFileClip, ImageSequenceClip, AudioFileClip
 from pdf2image import convert_from_path
+
+
 
 def get_text(lesson_name, grade):
     from googlesearch import search
@@ -40,7 +44,7 @@ def get_text(lesson_name, grade):
         download_pdf(url, filename)
     else:
         print("No links found.")
-        st.warn("Enter a valid NCERT lesson name!")
+        st.warning("Enter a valid NCERT lesson name!")
 
     from langchain.text_splitter import CharacterTextSplitter
     from langchain_community.document_loaders import PyPDFLoader
@@ -90,7 +94,7 @@ def generate_subheadings(lesson_name,grade, api_key):
 
 def app():
 
-    api_key = st.text_input("Enter your API key", type="password")
+    api_key = ""
     client = OpenAI(api_key=api_key)
     if os.path.exists("session_folder"):
         shutil.rmtree("session_folder")
@@ -104,18 +108,25 @@ def app():
     lesson name, the book name, the age group of the student. You are tasked with creating a PPT for the students based on the lesson content you receive.
     Each slide of the ppt must explain a portion of the lesson perfectly. 
     Follow these guidelines strictly:
+    make sure to use vocabulary and language that is simple and very easy to understand.
+
     Short description must be the overview of what you're about to teach and it has to be atleast 5 - 10 lines long.
     Long description must be the detailed explanation of the topic you're teaching and it has to be atleast 30 - 50 lines long.
     You will be given a list of sub headings. You must definetly explain these sub headings in your ppt according to the lesson.
 
-    Example: Slide <number>: <title> (this can be the topic you have chosen to teach.)
+    Example format: Slide <number>: <title> (this can be the topic you have chosen to teach.)
     short description: <short overview about the topic you're teaching, including the important keywords. This description has to be 5 - 10 lines"
     long description: <long description including the important keywords. This description has to be 30 - 50 lines or more. Explain precisely the topic you're explaining"
     
-    DON'T LEAVE A LINE ANY WHERE IN YOUR RESPONSE.
-
-    make sure to use vocabulary and language that is simple and very easy to understand.
-    At the end of last slide, do not give any conclusion or summary. Just end the presentation. Thanks.
+    I just need the slides and no other extra information. Make sure to follow the guidelines strictly.
+    Example:
+    Slide 2: Description of the Spring Festival
+    short description: The Spring Festival in "The Lost Child" is depicted with a burst of life and color, attracting various characters, including the joyful child. It's an essential backdrop that encapsulates traditional and cultural elements, tempting the child with myriad attractions.
+    long description: The Spring Festival is portrayed with vivid imagery and appeals to all senses – sight, sound, and smell. As narrated, the lanes and alleys are filled with people emerging in colorful attire, symbolizing the vibrancy of life. The festival serves as a rich tapestry of cultural significance, showcasing traditional sweets like burfi and jalebi, and activities that attract both adults and young ones alike. The energy of the festival is palpable, with sounds of laughter, chatter of the crowd, and the enticing aroma of sweetmeats and flowers filling the air. This festival is not just a background event; it actively shapes the child’s experience, fuelling his desires and social interactions. Through this lively environment, we see the child's heightened emotions and his deep longing for the toys and sweets on display, which his parents deny him. This denial builds a complex landscape of childlike wonder and the harsh realities of parental restriction.
+    
+    Slide 3: Atmosphere and Surroundings
+    short description: The atmosphere and surroundings at the festival are ingeniously crafted to serve as a mirror to the child's evolving emotional landscape. From joyous to chaotic, the setting underscores the narrative's emotional depth and the child's inner journey.
+    long description: The atmosphere of the festival is initially one of joy and exuberance, which is directly connected to the child’s initial state of happiness. The scenes are described richly; the mustard fields look like sweeps of melting gold, and dragonflies buzz around, adding to the picturesque quality of the festival. As the child interacts with different stalls and attractions, the surroundings become a blur of colors and sounds, reflecting his growing excitement and anticipation. However, as the story progresses towards the child’s realization of being lost, the atmosphere shifts dramatically to one of confusion and fear. The previously enchanting surroundings turn overwhelming and menacing. This transition in the setting from delightful to frightening mirrors the child’s psychological transition from delight in mundane desires to a profound sense of loss and fear. It is through these surroundings that the narrative conveys deeper themes of innocence, desire, and the sudden onset of existential fear.
     """
 
     st.title("Ekai")
@@ -179,12 +190,12 @@ def app():
 
                 st.success("Processing")
                 response = client.chat.completions.create(
-                    model="gpt-4-0125-preview",
+                    model="gpt-4-turbo",
                     messages=[
                         {"role": "system", "content": f"{system_message}"},
                         {"role": "user", "content": f"{user_message}"},
                     ],
-                    max_tokens=2000
+                    max_tokens=4000
                 )
 
                 full_script = response.choices[0].message.content[:-10]
