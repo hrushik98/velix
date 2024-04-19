@@ -12,35 +12,48 @@ from moviepy.editor import concatenate_videoclips, VideoFileClip, ImageSequenceC
 from pdf2image import convert_from_path
 
 
+from langchain.text_splitter import CharacterTextSplitter
+from langchain_community.document_loaders import PyPDFLoader
+
+import requests
 
 def get_text(lesson_name, grade):
-    from googlesearch import search
-
     def search_and_filter(term):
         try:
-            results = search(term, num=10, stop=10, pause=2)
-            filtered_links = [link for link in results if link.startswith('https://ncert.nic.in')]
-            return filtered_links
+            params = {
+                "engine": "google",
+                "q": term,
+                "api_key": "",
+                "hl": "en",
+                "num": 10,  # Number of results
+                "filetype": "pdf",
+                "site": "ncert.nic.in"
+            }
+            response = requests.get("https://serpapi.com/search", params=params)
+            data = response.json()
+            if "organic_results" in data:
+                filtered_links = [result["link"] for result in data["organic_results"]]
+                return filtered_links
+            else:
+                return []
         except Exception as e:
             print("An error occurred:", str(e))
             return []
 
-    search_term = "NCERT " + lesson_name + " " + grade + " filetype:pdf"
+    search_term = f"NCERT {lesson_name} {grade}"
     print(search_term)
     filtered_links = search_and_filter(search_term)
 
     if filtered_links:
-        import requests
-
         def download_pdf(url, filename):
             response = requests.get(url)
             with open(filename, 'wb') as f:
                 f.write(response.content)
             print(f"PDF downloaded successfully as {filename}")
 
-        url = f"{filtered_links[0]}"
+        url = filtered_links[0]
         print(url)
-        filename = "session" + ".pdf"
+        filename = "session.pdf"
         download_pdf(url, filename)
     else:
         print("No links found.")
@@ -50,13 +63,13 @@ def get_text(lesson_name, grade):
     from langchain_community.document_loaders import PyPDFLoader
 
     book_name = "session.pdf"
-    loader = PyPDFLoader(f"{book_name}")
+    loader = PyPDFLoader(book_name)
     documents = loader.load()
     text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
     docs = text_splitter.split_documents(documents)
     with open("text.txt", "w") as f:
-        for i in range(0, len(docs)):
-            f.write(docs[i].page_content.replace("\t", " "))
+        for doc in docs:
+            f.write(doc.page_content.replace("\t", " "))
 
     with open("text.txt", "r") as f:
         text = f.read()
