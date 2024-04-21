@@ -74,6 +74,6 @@ XlsxWriter==3.2.0
 streamlit
 langchain_community
 langchain
-googlesearch-python
+google
 pypdf
 certifi
