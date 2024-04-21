@@ -10,37 +10,33 @@ from moviepy.editor import concatenate_videoclips, VideoFileClip, ImageSequenceC
 from pdf2image import convert_from_path
 
 def get_text(lesson_name, grade):
-    from googlesearch import search
-
     def search_and_filter(term):
         try:
-            results = search(term, num=10, stop=10, pause=2)
-            filtered_links = [link for link in results if link.startswith('https://ncert.nic.in')]
+            search_results = search(term, num=10, stop=10)
+            filtered_links = [link for link in search_results if 'ncert.nic.in' in link and link.endswith('.pdf')]
             return filtered_links
         except Exception as e:
             print("An error occurred:", str(e))
             return []
 
-    search_term = "NCERT " + lesson_name + " " + grade + " filetype:pdf"
+    search_term = f"NCERT {lesson_name} {grade}"
     print(search_term)
     filtered_links = search_and_filter(search_term)
 
     if filtered_links:
-        import requests
-
         def download_pdf(url, filename):
             response = requests.get(url)
             with open(filename, 'wb') as f:
                 f.write(response.content)
             print(f"PDF downloaded successfully as {filename}")
 
-        url = f"{filtered_links[0]}"
+        url = filtered_links[0]
         print(url)
-        filename = "session" + ".pdf"
+        filename = "session.pdf"
         download_pdf(url, filename)
     else:
         print("No links found.")
-        st.warn("Enter a valid NCERT lesson name!")
+        st.warning("No content found. Try again")
 
     from langchain.text_splitter import CharacterTextSplitter
     from langchain_community.document_loaders import PyPDFLoader
