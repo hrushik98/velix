@@ -8,7 +8,7 @@ from openai import OpenAI
 from pptx.dml.color import RGBColor
 from moviepy.editor import concatenate_videoclips, VideoFileClip, ImageSequenceClip, AudioFileClip
 from pdf2image import convert_from_path
-
+from googlesearch import search
 def get_text(lesson_name, grade):
     def search_and_filter(term):
         try:
