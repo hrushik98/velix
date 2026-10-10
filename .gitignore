@@ -9,3 +9,5 @@ text.txt
 backend/.env
 frontend/node_modules/
 frontend/.next/
+.vercel
+.env*

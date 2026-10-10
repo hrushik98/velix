@@ -1,6 +1,8 @@
 # Velix Studio 2.0 (2026 Modernized Stack)
 High-definition automated educational video and narration studio powered by **DeepSeek LLM** and **ElevenLabs TTS**.
 
+**Try it live: [velix-topaz.vercel.app](https://velix-topaz.vercel.app)**
+
 ---
 
 ## 🌟 What's New vs Legacy Architecture
@@ -45,7 +47,7 @@ flowchart LR
 ## 🛠️ Quick Start
 
 ### 1. Backend (FastAPI)
-The backend is located in [`backend/`](file:///Users/hrushik/Desktop/12_projects/velix/backend) and runs on port `8001`:
+The backend is located in [`backend/`](backend/) and runs on port `8001`:
 
 ```bash
 # Activate virtual environment
@@ -56,7 +58,7 @@ uvicorn backend.main:app --host 127.0.0.1 --port 8001 --reload
 ```
 
 ### 2. Frontend (Next.js)
-The frontend is located in [`frontend/`](file:///Users/hrushik/Desktop/12_projects/velix/frontend) and runs on port `3001`:
+The frontend is located in [`frontend/`](frontend/) and runs on port `3001`:
 
 ```bash
 cd frontend
@@ -64,3 +66,26 @@ npm run dev -- -p 3001
 ```
 
 Open your browser at **http://localhost:3001**.
+
+---
+
+## 🌐 Live Deployment
+
+| Part | Where it runs |
+|---|---|
+| **Frontend** | Vercel project `velix`, root directory `frontend/`, at [velix-topaz.vercel.app](https://velix-topaz.vercel.app) |
+| **Backend** | FastAPI (uvicorn on port `8001`) on a Mac mini, published at `https://velix-api.hrushik.com` through the Cloudflare tunnel `velix` |
+
+The frontend keeps calling relative `/api/*` and `/storage/*` paths.
+`frontend/next.config.mjs` rewrites them to `BACKEND_URL`, which defaults to `http://127.0.0.1:8001` locally and is set to `https://velix-api.hrushik.com` on Vercel, so Vercel proxies those requests to the backend.
+Vercel allows a proxied request up to 120 seconds, which is why video rendering runs as a background job that the UI polls.
+
+Run the backend and its tunnel on the host:
+
+```bash
+uvicorn backend.main:app --host 127.0.0.1 --port 8001
+cloudflared tunnel --config ~/.cloudflared/velix.yml run
+```
+
+Redeploy the frontend with `vercel deploy --prod` from the repo root.
+`.vercelignore` uploads only `frontend/`, so the Python virtualenv and generated media never leave the machine.

@@ -1,0 +1,5 @@
+# Only the Next.js frontend is deployed to Vercel; the FastAPI backend runs elsewhere.
+/*
+!/frontend
+/frontend/node_modules
+/frontend/.next
