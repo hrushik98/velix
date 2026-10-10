@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+storage/
+session_folder/
+session.pdf
+session.txt
+text.txt
+backend/.env
+frontend/node_modules/
+frontend/.next/
